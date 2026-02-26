@@ -2,8 +2,7 @@
 Income Tax RAG Assistant — Terminal Entry Point.
 """
 
-from vectorstore import get_vectorstore
-from rag_chain import build_chain
+from backend_service import ask
 
 
 def main():
@@ -13,10 +12,7 @@ def main():
     print("  Ask questions about Indian Income Tax.")
     print("  Type 'exit' or 'quit' to stop.\n")
 
-    # ── Initialise pipeline ──
-    vectorstore = get_vectorstore()
-    chain = build_chain(vectorstore)
-    print("\n✅ Ready! Ask your questions.\n")
+    print("✅ Ready! Ask your questions.\n")
 
     # ── Interactive loop ──
     while True:
@@ -32,18 +28,13 @@ def main():
             print("Goodbye!")
             break
 
-        result = chain.invoke({"query": query})
+        result = ask(query)
 
         print("\n📝 Answer:")
-        print(result["result"])
+        print(result["answer"])
 
-        # Show source pages
-        if result.get("source_documents"):
-            pages = {
-                doc.metadata.get("page", "?")
-                for doc in result["source_documents"]
-            }
-            print(f"\n📄 Sources: pages {sorted(pages)}")
+        if result["sources"]:
+            print(f"\n📄 Sources: pages {result['sources']}")
 
         print("-" * 55 + "\n")
 

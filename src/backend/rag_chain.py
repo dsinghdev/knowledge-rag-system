@@ -6,7 +6,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_classic.chains import RetrievalQA
 from langchain_core.prompts import PromptTemplate
 
-from config import GOOGLE_API_KEY, LLM_MODEL, LLM_TEMPERATURE
+from .config import GOOGLE_API_KEY, LLM_MODEL, LLM_TEMPERATURE
 
 
 PROMPT_TEMPLATE = """You are an expert Indian Income Tax assistant.

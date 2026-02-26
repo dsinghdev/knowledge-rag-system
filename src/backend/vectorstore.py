@@ -10,7 +10,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_community.vectorstores import FAISS
 
-from config import (
+from .config import (
     PDF_DIR,
     INDEX_PATH,
     GOOGLE_API_KEY,
