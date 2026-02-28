@@ -6,8 +6,8 @@ In the future, this module can be replaced by HTTP calls to a FastAPI backend
 without changing the frontend code.
 """
 
-from .vectorstore import get_vectorstore
-from .rag_chain import build_chain
+from vectorstore import get_vectorstore
+from rag_chain import build_chain
 
 
 # ── Module-level singleton ───────────────────────────────

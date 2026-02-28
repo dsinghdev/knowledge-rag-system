@@ -2,7 +2,14 @@
 Income Tax RAG Assistant — Terminal Entry Point.
 """
 
-from backend_service import ask
+import sys
+import os
+
+# Support running from project root or inside src/backend
+if os.path.dirname(__file__) not in sys.path:
+    sys.path.append(os.path.dirname(__file__))
+
+from rag_engine import ask
 
 
 def main():

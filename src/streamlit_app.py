@@ -6,18 +6,7 @@ To decouple later, replace the backend_service import with HTTP calls.
 """
 
 import streamlit as st
-import sys
-import os
-
-# The container sets PYTHONPATH, but this helps for local execution
-if os.path.dirname(__file__) not in sys.path:
-    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "backend")))
-
-try:
-    import rag_engine
-except ImportError:
-    # Fallback for different envs
-    from backend import rag_engine
+import backend_service
 
 
 # ── Page config ──────────────────────────────────────────
@@ -132,7 +121,7 @@ if prompt := st.chat_input("Ask a question about Income Tax…"):
     # Get answer from backend
     with st.chat_message("assistant"):
         with st.spinner("Searching documents…"):
-            result = rag_engine.ask(prompt)
+            result = backend_service.ask(prompt)
 
         # Build response with source badges
         answer_text = result["answer"]

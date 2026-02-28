@@ -1,7 +1,21 @@
 services:
-  rag-app:
+  rag-ui:
     build: .
-    container_name: incometax-rag
+    container_name: incometax-rag-ui
+    env_file:
+      - .env
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./data:/app/data
+      - faiss_index:/app/faiss_index
+    stdin_open: true
+    tty: true
+
+  rag-terminal:
+    build: .
+    container_name: incometax-rag-terminal
+    command: ["python", "src/backend/app.py"]
     env_file:
       - .env
     volumes:
