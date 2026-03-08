@@ -1,5 +1,5 @@
 """
-Backend Service Layer for the Income Tax RAG Assistant.
+Backend Service Layer for the Investment RAG Assistant.
 
 Provides a clean interface (ask) between any frontend and the RAG pipeline.
 In the future, this module can be replaced by HTTP calls to a FastAPI backend

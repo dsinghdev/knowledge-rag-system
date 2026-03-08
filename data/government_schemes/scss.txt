@@ -1,0 +1,32 @@
+Senior Citizens Savings Scheme (SCSS) - Scheme Details
+
+(1) Who can open:-
+(i) An individual above 60 years of age.
+(ii) Retired Civilian Employees above 55 years of age and below 60 years of age, subject to the condition that investment to be made within 1 month of receipt of retirement benefits.
+(iii) Retired Defense Employees above 50 years of age and below 60 years of age, subject to the condition that investment to be made within 1 month of receipt of retirement benefits.
+(iv) Account can be opened as individual or jointly with spouse only.
+
+(2) Deposit:-
+(i) Minimum deposit shall be ₹ 1000 and in multiple of ₹ 1000.
+(ii) Maximum limit is ₹ 30 lakh in all SCSS accounts opened by an individual.
+(iii) The whole amount of deposit in a joint account shall be attributable to the first account holder only.
+
+(3) Interest:-
+(i) 8.2 % per annum, payable from the date of deposit of 31st March/30th June/30th Sept/31st December.
+(ii) If the interest payable every quarter is not claimed by an account holder, such interest shall not earn additional interest.
+(iii) Interest is taxable if total interest in all SCSS accounts exceeds ₹ 50,000/- in a financial year and TDS at the prescribed rate shall be deducted from the total interest paid.
+(iv) Investment under this scheme qualifies for the benefit of section 80C of Income Tax Act, 1961.
+
+(4) Premature Closure:-
+(i) Account can be prematurely closed any time after the date of opening.
+(ii) If account closed before 1 year, no interest will be payable and if any interest paid in account shall be recovered from principle.
+(iii) If account closed after 1 year but before 2 years from the date of opening, an amount equal to 1.5 % will be deducted from the principle.
+(iv) If account closed after 2 years but before 5 years from the date of opening, an amount equal to 1 % will be deducted from the principle.
+
+(5) Maturity:-
+(i) Account may be closed after 5 years from the date of opening by submitting prescribed application form.
+
+(6) Extension of account:-
+(i) The account holder may extend the account for a further block of 3 years.
+(ii) Application for extension should be made within 1 year from the date of maturity.
+(iii) Extension can be done for any number of blocks of 3 years each.

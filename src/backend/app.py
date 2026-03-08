@@ -1,5 +1,5 @@
 """
-Income Tax RAG Assistant — Terminal Entry Point.
+Investment RAG Assistant — Terminal Entry Point.
 """
 
 import sys
@@ -14,9 +14,9 @@ from rag_engine import ask
 
 def main():
     print("\n" + "=" * 55)
-    print("  💰  Income Tax RAG Assistant  💰")
+    print("  📈  Investment RAG Assistant  📈")
     print("=" * 55)
-    print("  Ask questions about Indian Income Tax.")
+    print("  Ask questions about Indian Small Savings & Investment schemes.")
     print("  Type 'exit' or 'quit' to stop.\n")
 
     print("✅ Ready! Ask your questions.\n")
@@ -41,7 +41,7 @@ def main():
         print(result["answer"])
 
         if result["sources"]:
-            print(f"\n📄 Sources: pages {result['sources']}")
+            print(f"\n📄 Sources: {result['sources']}")
 
         print("-" * 55 + "\n")
 

@@ -4,6 +4,7 @@ FROM python:3.12-slim
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app/src/backend:/app/src/frontend:/app/src \
+    HF_HOME=/app/models \
     PORT=8501
 
 WORKDIR /app
@@ -21,6 +22,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY src/ ./src/
 COPY data/ ./data/
+COPY .streamlit/ ./.streamlit/
 
 # Expose the port Streamlit will run on
 EXPOSE ${PORT}

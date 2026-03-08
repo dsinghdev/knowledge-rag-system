@@ -28,28 +28,36 @@ def _get_embeddings():
     )
 
 
-def load_and_split_pdfs():
-    """Load every PDF in data/ and split into chunks."""
-    pdf_files = glob.glob(os.path.join(PDF_DIR, "*.pdf"))
+from langchain_community.document_loaders import PyPDFLoader, TextLoader, DirectoryLoader
 
-    if not pdf_files:
-        raise FileNotFoundError(
-            f"No PDF files found in {PDF_DIR}. "
-            "Please add at least one Income Tax PDF."
-        )
+# ... (rest of imports)
+
+def load_and_split_data():
+    """Load data from various formats in the data/ folder and subfolders."""
+    print(f"📂 Scanning directory: {PDF_DIR}")
+    
+    # Load PDFs
+    pdf_loader = DirectoryLoader(PDF_DIR, glob="**/*.pdf", loader_cls=PyPDFLoader)
+    # Load Text and Markdown
+    text_loader = DirectoryLoader(PDF_DIR, glob="**/*.txt", loader_cls=TextLoader)
+    md_loader = DirectoryLoader(PDF_DIR, glob="**/*.md", loader_cls=TextLoader)
 
     documents = []
-    for pdf_path in pdf_files:
-        filename = os.path.basename(pdf_path)
-        print(f"  Loading: {filename}")
-        loader = PyPDFLoader(pdf_path)
-        pages = loader.load()
-        # Add filename to metadata for explicit citation
-        for page in pages:
-            page.metadata["source_name"] = filename
-        documents.extend(pages)
+    for loader in [pdf_loader, text_loader, md_loader]:
+        docs = loader.load()
+        # Add metadata source_name if missing
+        for doc in docs:
+            if "source_name" not in doc.metadata:
+                doc.metadata["source_name"] = os.path.basename(doc.metadata.get("source", "Unknown"))
+        documents.extend(docs)
 
-    print(f"  Loaded {len(documents)} pages from {len(pdf_files)} PDF(s)")
+    if not documents:
+        raise FileNotFoundError(
+            f"No valid data files found in data folder. "
+            "Please add some investment documents (PDF, TXT, or MD)."
+        )
+
+    print(f"  Loaded {len(documents)} document pages/files total.")
 
     # Section-aware splitting logic
     splitter = RecursiveCharacterTextSplitter(
@@ -68,9 +76,9 @@ def load_and_split_pdfs():
 
 
 def create_vectorstore():
-    """Build a FAISS index from PDFs and save to disk."""
-    print("📄 Loading and splitting PDFs...")
-    chunks = load_and_split_pdfs()
+    """Build a FAISS index from documents and save to disk."""
+    print("📄 Loading and splitting data...")
+    chunks = load_and_split_data()
 
     print("🔢 Creating embeddings & FAISS index...")
     embeddings = _get_embeddings()

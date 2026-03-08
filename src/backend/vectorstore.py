@@ -1,19 +1,21 @@
 """
-Vector store management: PDF loading, chunking, FAISS index creation & loading.
+Vector store management: Multi-format data loading, chunking, FAISS index creation & loading.
 """
 
 import os
 import glob
+import logging
 
-from langchain_community.document_loaders import PyPDFLoader
+logger = logging.getLogger(__name__)
+
+from langchain_community.document_loaders import PyPDFLoader, TextLoader, DirectoryLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 
 from config import (
     PDF_DIR,
     INDEX_PATH,
-    GOOGLE_API_KEY,
     EMBEDDING_MODEL,
     CHUNK_SIZE,
     CHUNK_OVERLAP,
@@ -21,35 +23,38 @@ from config import (
 
 
 def _get_embeddings():
-    """Return the embedding model instance."""
-    return GoogleGenerativeAIEmbeddings(
-        model=EMBEDDING_MODEL,
-        google_api_key=GOOGLE_API_KEY,
+    """Return the embedding model instance (runs locally, no API key needed)."""
+    return HuggingFaceEmbeddings(
+        model_name=EMBEDDING_MODEL,
     )
 
 
-def load_and_split_pdfs():
-    """Load every PDF in data/ and split into chunks."""
-    pdf_files = glob.glob(os.path.join(PDF_DIR, "*.pdf"))
-
-    if not pdf_files:
-        raise FileNotFoundError(
-            f"No PDF files found in {PDF_DIR}. "
-            "Please add at least one Income Tax PDF."
-        )
+def load_and_split_data():
+    """Load data from various formats in the data/ folder and subfolders."""
+    logger.info("Scanning directory: %s", PDF_DIR)
+    
+    # Load PDFs
+    pdf_loader = DirectoryLoader(PDF_DIR, glob="**/*.pdf", loader_cls=PyPDFLoader, silent_errors=True)
+    # Load Text and Markdown
+    text_loader = DirectoryLoader(PDF_DIR, glob="**/*.txt", loader_cls=TextLoader, silent_errors=True)
+    md_loader = DirectoryLoader(PDF_DIR, glob="**/*.md", loader_cls=TextLoader, silent_errors=True)
 
     documents = []
-    for pdf_path in pdf_files:
-        filename = os.path.basename(pdf_path)
-        print(f"  Loading: {filename}")
-        loader = PyPDFLoader(pdf_path)
-        pages = loader.load()
-        # Add filename to metadata for explicit citation
-        for page in pages:
-            page.metadata["source_name"] = filename
-        documents.extend(pages)
+    for loader in [pdf_loader, text_loader, md_loader]:
+        docs = loader.load()
+        # Add metadata source_name if missing
+        for doc in docs:
+            if "source_name" not in doc.metadata:
+                doc.metadata["source_name"] = os.path.basename(doc.metadata.get("source", "Unknown"))
+        documents.extend(docs)
 
-    print(f"  Loaded {len(documents)} pages from {len(pdf_files)} PDF(s)")
+    if not documents:
+        raise FileNotFoundError(
+            f"No valid data files found in {PDF_DIR}. "
+            "Please add some investment documents (PDF, TXT, or MD)."
+        )
+
+    logger.info("Loaded %d document pages/files total.", len(documents))
 
     # Section-aware splitting logic
     splitter = RecursiveCharacterTextSplitter(
@@ -63,21 +68,21 @@ def load_and_split_pdfs():
         is_separator_regex=False
     )
     chunks = splitter.split_documents(documents)
-    print(f"  Split into {len(chunks)} chunks")
+    logger.info("Split into %d chunks", len(chunks))
     return chunks
 
 
 def create_vectorstore():
-    """Build a FAISS index from PDFs and save to disk."""
-    print("📄 Loading and splitting PDFs...")
-    chunks = load_and_split_pdfs()
+    """Build a FAISS index from documents and save to disk."""
+    logger.info("Loading and splitting data...")
+    chunks = load_and_split_data()
 
-    print("🔢 Creating embeddings & FAISS index...")
+    logger.info("Creating embeddings & FAISS index...")
     embeddings = _get_embeddings()
     vectorstore = FAISS.from_documents(chunks, embeddings)
     vectorstore.save_local(INDEX_PATH)
 
-    print("✅ Vector store saved to disk.")
+    logger.info("Vector store saved to disk at %s", INDEX_PATH)
     return vectorstore
 
 
@@ -93,8 +98,10 @@ def load_vectorstore():
 
 def get_vectorstore():
     """Return the vectorstore — create it if it doesn't exist yet."""
-    if os.path.exists(INDEX_PATH):
-        print("📂 Loading existing vector store...")
+    index_file = os.path.join(INDEX_PATH, "index.faiss")
+    if os.path.exists(index_file):
+        logger.info("Loading existing vector store from %s", INDEX_PATH)
         return load_vectorstore()
     else:
+        logger.info("No existing index found — building from scratch...")
         return create_vectorstore()
