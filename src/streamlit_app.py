@@ -127,10 +127,10 @@ if prompt := st.chat_input("Ask a question about Income Tax…"):
         answer_text = result["answer"]
         if result["sources"]:
             badges = " ".join(
-                f'<span class="source-badge">Page {p}</span>'
-                for p in result["sources"]
+                f'<span class="source-badge">{s}</span>'
+                for s in result["sources"]
             )
-            answer_text += f"\n\n📄 **Sources:** {badges}"
+            answer_text += f"\n\n**Sources:** {badges}"
 
         st.markdown(answer_text, unsafe_allow_html=True)
         st.session_state.messages.append(

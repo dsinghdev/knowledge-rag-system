@@ -42,9 +42,16 @@ def ask(question: str) -> dict:
 
     sources = []
     if result.get("source_documents"):
-        sources = sorted(
-            {doc.metadata.get("page", -1) for doc in result["source_documents"]}
-        )
+        # Extract unique (Source Name, Page Number) pairs
+        seen_sources = set()
+        for doc in result["source_documents"]:
+            name = doc.metadata.get("source_name", "Unknown Document")
+            page = doc.metadata.get("page", 0) + 1  # Langchain is 0-indexed
+            
+            source_entry = f"{name} (Page {page})"
+            if source_entry not in seen_sources:
+                sources.append(source_entry)
+                seen_sources.add(source_entry)
 
     return {
         "answer": result["result"],

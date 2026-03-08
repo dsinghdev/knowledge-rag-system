@@ -40,15 +40,27 @@ def load_and_split_pdfs():
 
     documents = []
     for pdf_path in pdf_files:
-        print(f"  Loading: {os.path.basename(pdf_path)}")
+        filename = os.path.basename(pdf_path)
+        print(f"  Loading: {filename}")
         loader = PyPDFLoader(pdf_path)
-        documents.extend(loader.load())
+        pages = loader.load()
+        # Add filename to metadata for explicit citation
+        for page in pages:
+            page.metadata["source_name"] = filename
+        documents.extend(pages)
 
     print(f"  Loaded {len(documents)} pages from {len(pdf_files)} PDF(s)")
 
+    # Section-aware splitting logic
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=CHUNK_SIZE,
         chunk_overlap=CHUNK_OVERLAP,
+        separators=[
+            "\n\nSection ", "\nSection ", 
+            "\n\nChapter ", "\nChapter ",
+            "\n\n", "\n", " ", ""
+        ],
+        is_separator_regex=False
     )
     chunks = splitter.split_documents(documents)
     print(f"  Split into {len(chunks)} chunks")
