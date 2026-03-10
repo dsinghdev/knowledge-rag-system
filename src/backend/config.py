@@ -13,6 +13,11 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 
+# Silence verbose libraries
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("huggingface_hub").setLevel(logging.WARNING)
+logging.getLogger("urllib3").setLevel(logging.WARNING)
+
 # Load environment variables from project root .env
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", "..", ".env"))
 
