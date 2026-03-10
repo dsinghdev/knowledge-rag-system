@@ -2,6 +2,7 @@ services:
   rag-app:
     build: .
     container_name: knowledge-rag-app
+    restart: unless-stopped
     env_file:
       - .env
     ports:
