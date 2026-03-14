@@ -8,3 +8,4 @@ pypdf
 python-dotenv
 streamlit
 sentence-transformers
+motifer==1.1.3

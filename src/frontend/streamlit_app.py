@@ -1,5 +1,5 @@
 """
-Investment RAG Assistant — Streamlit Chat UI.
+Knowledge RAG Assistant — Streamlit Chat UI.
 
 This frontend ONLY imports backend_service, keeping a clean boundary.
 To decouple later, replace the backend_service import with HTTP calls.
@@ -25,7 +25,7 @@ except ImportError:
 
 # ── Page config ──────────────────────────────────────────
 st.set_page_config(
-    page_title="Investment RAG Assistant",
+    page_title="Knowledge RAG Assistant",
     page_icon="📈",
     layout="centered",
 )
@@ -46,9 +46,9 @@ st.markdown(
         padding-top: 2rem;
     }
 
-    /* Header gradient - Investment theme */
+    /* Header gradient - Knowledge theme */
     .app-header {
-        background: linear-gradient(135deg, #064e3b 0%, #065f46 50%, #0d9488 100%);
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
         padding: 1.8rem 2rem;
         border-radius: 16px;
         margin-bottom: 1.5rem;
@@ -73,14 +73,14 @@ st.markdown(
     /* Source badge - works on both light and dark */
     .source-badge {
         display: inline-block;
-        background: #065f46;
-        color: #d1fae5;
+        background: #334155;
+        color: #e2e8f0;
         font-size: 0.78rem;
         font-weight: 600;
         padding: 2px 10px;
         border-radius: 999px;
         margin: 0 3px;
-        border: 1px solid #0d9488;
+        border: 1px solid #475569;
     }
 
     /* DO NOT force text colors — let Streamlit handle light/dark mode natively */
@@ -132,8 +132,8 @@ st.markdown(
 st.markdown(
     """
     <div class="app-header">
-        <h1>📈 Investment RAG Assistant</h1>
-        <p>Your guide to Indian Small Savings & Investment schemes — powered by official documents</p>
+        <h1>📈 Knowledge RAG Assistant</h1>
+        <p>Chat with your documents</p>
     </div>
     """,
     unsafe_allow_html=True,
@@ -149,9 +149,9 @@ with st.sidebar:
     st.divider()
     st.markdown("### ℹ️ About")
     st.markdown(
-        "This assistant helps you understand **Indian Investment Schemes** (PPF, NPS, SSY, etc.) using "
+        "This assistant helps you understand your documents using "
         "**Retrieval-Augmented Generation (RAG)**.\n\n"
-        "Responses are grounded in official government circulars and guides."
+        "Responses are grounded purely in the provided content."
     )
     st.divider()
 
@@ -167,8 +167,36 @@ for msg in st.session_state.messages:
     with st.chat_message(msg["role"], avatar=AVATARS.get(msg["role"])):
         st.markdown(msg["content"], unsafe_allow_html=True)
 
+
+def handle_stream(stream):
+    """Consume the stream, handle the sources metadata yield, and return the final strings."""
+    full_answer = ""
+    sources_str = ""
+    
+    for chunk in stream:
+        # Check if this chunk is the special metadata chunk
+        if chunk.startswith("\n\n[SOURCES_METADATA:"):
+            sources_str = chunk.replace("\n\n[SOURCES_METADATA:", "").replace("]", "")
+        elif chunk.startswith("🔑 **API Key") or chunk.startswith("🌐 **Connection ") or chunk.startswith("⚠️ **Data Not Found") or chunk.startswith("❌ **An unexpected error "):
+            full_answer += chunk
+            yield chunk
+        else:
+            # Yield exactly what came from the pipeline for smooth streaming
+            full_answer += chunk
+            yield chunk
+            
+    # We yield the sources at the VERY end as a normal markdown string if available
+    # However st.write_stream yields the chunks sequentially. 
+    # To append badges we must do it after write_stream finishes, so we store the state in st.session_state temporarily
+    st.session_state.temp_sources = sources_str
+    st.session_state.temp_full_answer = full_answer
+
+
 # ── Chat input ───────────────────────────────────────────
-if prompt := st.chat_input("Ask about PPF, Sukanya, NPS, or other schemes…"):
+if prompt := st.chat_input("Ask a question about your documents…"):
+    # We copy the history up to this point because ask_stream needs it
+    chat_history = list(st.session_state.messages)
+    
     # Show user message
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user", avatar=AVATARS["user"]):
@@ -177,33 +205,53 @@ if prompt := st.chat_input("Ask about PPF, Sukanya, NPS, or other schemes…"):
     # Get answer from backend
     with st.chat_message("assistant", avatar=AVATARS["assistant"]):
         try:
-            with st.spinner("Thinking…"):
-                result = rag_engine.ask(prompt)
+            # Show a status indicator while the first chunk is being prepared (RAG, searching, etc.)
+            status_container = st.empty()
+            with status_container.status("🔍 Searching knowledge base...", expanded=False) as status:
+                stream = rag_engine.ask_stream(prompt, chat_history=chat_history)
+                
+                # We wrap the handle_stream in another generator that clears the status 
+                # as soon as the first real text chunk arrives
+                def stream_with_status_management(s):
+                    first_text_chunk = True
+                    for chunk in s:
+                        # Once we get a real chunk (not the metadata one), clear the spinner
+                        if first_text_chunk and not chunk.startswith("\n\n[SOURCES_METADATA:"):
+                            status.update(label="✅ Thinking complete!", state="complete", expanded=False)
+                            status_container.empty()
+                            first_text_chunk = False
+                        yield chunk
 
-            # Build response with source badges
-            answer_text = result["answer"]
-            if result["sources"]:
+                # Use write_stream to display the text as it is generated
+                st.write_stream(handle_stream(stream_with_status_management(stream)))
+            
+            final_answer = st.session_state.get("temp_full_answer", "")
+            sources_str = st.session_state.get("temp_sources", "")
+            
+            # If sources exist, append them to the UI as markdown (which write_stream can't do natively for HTML spans easily)
+            if sources_str:
+                source_list = sources_str.split(",")
                 badges = " ".join(
                     f'<span class="source-badge">{s}</span>'
-                    for s in result["sources"]
+                    for s in source_list
                 )
-                answer_text += f"\n\n📄 **Sources:** {badges}"
-
-        except FileNotFoundError:
-            logger.exception("Data directory not found")
-            answer_text = (
-                "⚠️ **Data folder not found.**\n\n"
-                "Please make sure your investment documents (PDF/TXT) are in the `data/` folder "
-                "and restart the app."
+                sources_md = f"\n\n📄 **Sources:** {badges}"
+                # Append to screen immediately
+                st.markdown(sources_md, unsafe_allow_html=True)
+                final_answer += sources_md
+            
+            # Save the complete final answer (with sources) to the history
+            st.session_state.messages.append(
+                {"role": "assistant", "content": final_answer}
             )
-        except Exception:
-            logger.exception("Error processing query")
+            
+        except Exception as e:
+            logger.exception("Frontend error")
             answer_text = (
                 "❌ **Something went wrong.**\n\n"
-                "Please try again in a moment. If the issue persists, check the application logs."
+                f"Error: `{str(e)}`"
             )
-
-        st.markdown(answer_text, unsafe_allow_html=True)
-        st.session_state.messages.append(
-            {"role": "assistant", "content": answer_text}
-        )
+            st.error(answer_text)
+            st.session_state.messages.append(
+                {"role": "assistant", "content": answer_text}
+            )

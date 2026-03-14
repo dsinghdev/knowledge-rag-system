@@ -1,5 +1,5 @@
 """
-Investment RAG Assistant — Terminal Entry Point.
+Knowledge RAG Assistant — Terminal Entry Point.
 """
 
 import sys
@@ -9,17 +9,19 @@ import os
 if os.path.dirname(__file__) not in sys.path:
     sys.path.append(os.path.dirname(__file__))
 
-from rag_engine import ask
+from rag_engine import ask_stream
 
 
 def main():
     print("\n" + "=" * 55)
-    print("  📈  Investment RAG Assistant  📈")
+    print("  📈  Knowledge RAG Assistant  📈")
     print("=" * 55)
-    print("  Ask questions about Indian Small Savings & Investment schemes.")
+    print("  Ask questions based on your provided documents.")
     print("  Type 'exit' or 'quit' to stop.\n")
 
     print("✅ Ready! Ask your questions.\n")
+
+    chat_history = []
 
     # ── Interactive loop ──
     while True:
@@ -35,15 +37,33 @@ def main():
             print("Goodbye!")
             break
 
-        result = ask(query)
+        print("\n📝 Answer: ", end="", flush=True)
+        
+        sources_str = ""
+        full_answer = ""
+        
+        # We only want to keep the last few messages to avoid huge context windows over time.
+        # But for now passing the whole history.
+        for chunk in ask_stream(query, chat_history=chat_history):
+            if chunk.startswith("\n\n[SOURCES_METADATA:"):
+                # Clean up the sources metadata chunk for display
+                raw_sources = chunk.replace("\n\n[SOURCES_METADATA:", "").replace("]", "")
+                sources_str = raw_sources
+                continue
+                
+            print(chunk, end="", flush=True)
+            full_answer += chunk
 
-        print("\n📝 Answer:")
-        print(result["answer"])
+        print() # Newline after answer finishes
 
-        if result["sources"]:
-            print(f"\n📄 Sources: {result['sources']}")
+        if sources_str:
+            print(f"\n📄 Sources: [{sources_str}]")
 
         print("-" * 55 + "\n")
+        
+        # Add to history
+        chat_history.append({"role": "user", "content": query})
+        chat_history.append({"role": "assistant", "content": full_answer})
 
 
 if __name__ == "__main__":

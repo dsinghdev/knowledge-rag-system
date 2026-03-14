@@ -7,16 +7,26 @@ import logging
 from dotenv import load_dotenv
 
 # ── Logging setup (applies to all backend modules) ────
+from motifer import LogFactory
+
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
+
+# Initialize Motifer LogFactory with mandatory service name
+# This provides structured logging and pattern validation
+factory = LogFactory(service="investment-rag-assistant", log_level=LOG_LEVEL)
+# We use standard logging configuration but motifer helps with formatting and consistency
 logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s  %(levelname)-8s  %(name)s  %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
+    level=LOG_LEVEL,
+    format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
+    datefmt="%H:%M:%S",
 )
 
 # Silence verbose libraries
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("huggingface_hub").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
+logging.getLogger("faiss").setLevel(logging.WARNING)
+logging.getLogger("langchain").setLevel(logging.INFO)
 
 # Load environment variables from project root .env
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", "..", ".env"))
